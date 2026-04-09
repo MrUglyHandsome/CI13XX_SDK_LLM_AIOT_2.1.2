@@ -8,7 +8,7 @@
 /*板级配置更多细节请查看:https://document.chipintelli.com/硬件资料-->模块手册
 chipintelli提供的部分开发板和模组，可以通过下面的宏选择，也可以参考开发板的板级配置文
 件添加自定义板级配置文件*/
-#define USE_CI_D02GS01J_BOARD       0   //CI-D0XGS01J，端子模块，芯片型号必须设置为1302
+#define USE_CI_D02GS01J_BOARD       1   //CI-D0XGS01J，端子模块，芯片型号必须设置为1302
 #define USE_CI_D02GS02S_BOARD       0   //CI-D0XGS02S，SMT模块，芯片型号必须设置为1302
 #define USE_CI_D12GS01J_BOARD       0   //CI-D0XGS01J，端子模块，芯片型号必须设置为1312JE
 #define USE_CI_D06GT01D_BOARD       1   //CI-D06GT01D，开发版，芯片型号必须设置为1306
@@ -16,6 +16,10 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #define USE_CI_D06GT01J_BOARD       0   //CI_D06GT01J, 开发板，型号必须为设置1306-仅配置支持双mic 算法+AEC，其他配置不支持
 #define USE_CI_E0XGTD02S_BOARD      0   //CI-E06GT02S, 开发板2305/2306
 #define USE_CUS_XXXXXXX_BOARD       0   //用户自定义
+
+#define USE_CI_D03GS02S_BOARD       0 
+
+
 
 #if (USE_CI_D02GS01J_BOARD == 1)
 #define CI_CHIP_TYPE                1302    //flash:2MB,SSOP24
@@ -43,6 +47,10 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #elif (USE_CUS_XXXXXXX_BOARD == 1)
 #define CI_CHIP_TYPE                xxxx    //flash:4MB,QFN40
 #define BOARD_PORT_FILE             "CI-XXXX.c"
+
+#elif (USE_CI_D03GS02S_BOARD == 1)
+#define CI_CHIP_TYPE                1303     //flash:4MB,QFN40
+#define BOARD_PORT_FILE             "CI-D03GS02S.c"
 #endif
 
 #ifndef HOST_MIC_USE_NUMBER
@@ -56,19 +64,21 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #define USE_IIS1_OUT_PRE_RSLT_AUDIO    0   //1,开启IIS采音功能,可以使用采音板采音,占用PA2~PA6。会多消耗20KB SYS内存 0,关闭IIS采音功能,PA2~PA6可以用于其它功能。
             
 //**通讯串口配置
-#define CONFIG_CI_LOG_UART             HAL_UART0_BASE  //配置log输出使用的串口，请勿与protocol共用同一个串口
+#define CONFIG_CI_LOG_UART             HAL_UART0_BASE//HAL_UART0_BASE   //配置log输出使用的串口，请勿与protocol共用同一个串口
 
-#define MSG_COM_USE_UART_EN            0   //0,关闭语音模块通讯协议。1,开启语音模块通讯协议。
-#define UART_PROTOCOL_NUMBER           (HAL_UART2_BASE)    //语音模块协议使用的串口，请勿与log共用同一个串口。
-#define UART_PROTOCOL_BAUDRATE         (UART_BaudRate921600) //语音模块协议使用的串口波特率。
-#define UART_PROTOCOL_VER              2   //语音模块协议版本号:1,一代协议。2,二代协议，255,平台生成协议
+#define MSG_COM_USE_UART_EN            1    //0,关闭语音模块通讯协议。1,开启语音模块通讯协议。
+#define UART_PROTOCOL_NUMBER           HAL_UART2_BASE      //语音模块协议使用的串口，请勿与log共用同一个串口。
+#define UART_PROTOCOL_BAUDRATE         UART_BaudRate115200  //语音模块协议使用的串口波特率。
+#define UART_PROTOCOL_VER              255    //语音模块协议版本号:1,一代协议。2,二代协议，255,平台生成协议
+
+
 
 
 #define CLOUD_UART_PROTOCOL_EN         0   //云端协议使能-只有在启英开发者平台做固件配协议能用
 #if CLOUD_UART_PROTOCOL_EN
 #define CLOUD_CFG_UART_SEND_EN         1   //使能串口发送数据
 #define CLOUD_CFG_PLAY_EN              1   //播报音使能
-#define CLOUD_CFG_UART_PORT	         ((UART_TypeDef*)(HAL_UART1_BASE))// HAL_UART0_BASE ~ HAL_UART2_BASE，请勿与log共用同一个串口
+#define CLOUD_CFG_UART_PORT	         ((UART_TypeDef*)(HAL_UART0_BASE))// HAL_UART0_BASE ~ HAL_UART2_BASE，请勿与log共用同一个串口
 #define CLOUD_CFG_UART_BAUND_RATE    UART_BaudRate9600
 #endif
 
@@ -93,7 +103,7 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 //**时钟源配置
 #ifndef USE_EXTERNAL_CRYSTAL_OSC
 #if ((CI_CHIP_TYPE == 1312) || (CI_CHIP_TYPE == 1311) || (CI_CHIP_TYPE == 2305) || (CI_CHIP_TYPE == 2306))
-#define USE_EXTERNAL_CRYSTAL_OSC        0
+#define USE_EXTERNAL_CRYSTAL_OSC        1 
 #else
 #define USE_EXTERNAL_CRYSTAL_OSC        1           //0:使用内部RC作为时钟源。1:使用外部晶振作为时钟源。
 #endif
@@ -213,10 +223,10 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #define PCM_ALG_ROOLBACK_FRAME_LEN                        25             //前端回退25帧400ms-
 #define PCM_ALG_FRAME_LEN                                 512            //前端原始音频16K采样，每帧256个点共512字节
 //          
-#define CUR_INTERACTION_MULTI_ROUND_ENABLE                1              //1-多轮 0-单轮
-#define UPLOAD_PLAY_FULL_DUPLEX_ENABLE                    0              //全双工处理,播放音频的同时支持vad检测音频上传
+#define CUR_INTERACTION_MULTI_ROUND_ENABLE                0              //1-多轮 0-单轮
+#define UPLOAD_PLAY_FULL_DUPLEX_ENABLE                    1              //全双工处理,播放音频的同时支持vad检测音频上传
 #define VAD_START_STOP_PLAY_ENABLE                        0              //全双工模式下，vad起来，立刻停止播放 1-停止播放 0-不停止播放
-#define CLOUD_ANS_TIME_OUT_ENEABLE                        1              //云端响应超时功能使能
+#define CLOUD_ANS_TIME_OUT_ENEABLE                        0              //云端响应超时功能使能
 #define CLOUD_ANS_TIME_OUT_VALUE                          6              //云端响应超时时间6S，必须大于0
 #define AUDIO_PLAY_MODE                                   1              //1-支持打断当前播放 0-不支持，顺序播放-暂时不用
 #define UPLOAD_NNDENOISE_AUDIO_DATA_ENABLE                1              //1-上传降噪的音频 0-上传非降噪的音频
@@ -231,8 +241,8 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 
 //和WiFi通信串口及参数配置
 #if AUDIO_DATA_PLAY_BY_UART || AUDIO_DATA_UPLOAD_BY_UART
-#define UART_NUM_SEND_PLAY_AUDIO_NUMBER                  HAL_UART1_BASE           //网络端交互的串口
-#define UART_NUM_SEND_PLAY_AUDIO_BAUDRATE                UART_BaudRate921600      //网络端交互的串口波特率
+#define UART_NUM_SEND_PLAY_AUDIO_NUMBER                  HAL_UART1_BASE            //网络端交互的串口
+#define UART_NUM_SEND_PLAY_AUDIO_BAUDRATE                UART_BaudRate1M       //网络端交互的串口波特率
 #endif
 #if NET_AUDIO_PLAY_BY_MP3 && AUDIO_COMPRESS_RECORD_DISABLE && UPLOAD_PLAY_FULL_DUPLEX_ENABLE && !VAD_START_STOP_PLAY_ENABLE
 #define NETWORK_RECV_BUFF_MAX_SIZE                       (REQUEST_ONE_FRAME_SEZIE*10 + 20) //接收网络端串口数据最大size-帧头+预留4字节
@@ -274,12 +284,12 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
  || ((USE_CWSL)&& (AUDIO_COMPRESS_SPEEX_ENABLE || AUDIO_COMPRESS_OPUS_ENABLE))\
  || (AUDIO_COMPRESS_OPUS_ENABLE && NET_AUDIO_PLAY_BY_MP3))
 //注意开doa+aec算法或者开自学习，由于内存原因，需要关闭重采样，节省24KB内存，但是识别效果会下降5个点左右，如果要使用doa+aec算法又要保证识别效果，请使用hpout输出方案
-#define INNER_CODEC_AUDIO_IN_USE_RESAMPLE   0                   
+#define INNER_CODEC_AUDIO_IN_USE_RESAMPLE   1                   
 #endif
 /********************************************离在线参数宏配置结束********************************************/
 #define USER_CODE_SWITCH_ENABLE     (0)                                 //两份code动态切换功能
 #if USER_CODE_SWITCH_ENABLE
-#define UART_PROTOCOL_NUMBER           (HAL_UART1_BASE)      
+#define UART_PROTOCOL_NUMBER           (HAL_UART0_BASE)      
 #define UART_PROTOCOL_BAUDRATE         (UART_BaudRate115200)    //TTS默认波特率115200
 #define USER_CODE2_SAVE_ADDR           0x4000-8                 //code固件地址存放位置
 #endif 
@@ -293,10 +303,10 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #define DEFAULT_MODEL_GROUP_ID          0
 #endif
 
-#define PLAY_WELCOME_EN                 1      //是否在启动时播放开机提示音。1:是 0:否。
-#define PLAY_ENTER_WAKEUP_EN            1      //是否在唤醒时播放提示音。1:是 0:否。
-#define PLAY_EXIT_WAKEUP_EN             1      //是否在切换到只监听唤词状态时播放提示音。1:是 0:否。
-#define PLAY_OTHER_CMD_EN               1      //是否在识别到命令词时播放提示音。1:是 0:否。
+#define PLAY_WELCOME_EN                 1       //是否在启动时播放开机提示音。1:是 0:否。
+#define PLAY_ENTER_WAKEUP_EN            0       //是否在唤醒时播放提示音。1:是 0:否。
+#define PLAY_EXIT_WAKEUP_EN             1       //是否在切换到只监听唤词状态时播放提示音。1:是 0:否。
+#define PLAY_OTHER_CMD_EN               0       //是否在识别到命令词时播放提示音。1:是 0:否。
 #define ADAPTIVE_THRESHOLD              0
 #define ASR_SKIP_FRAME_CONFIG           0
 #define EXIT_WAKEUP_TIME                30*1000   //退出唤醒超时时间,单位毫秒。超过此配置指定的时间长度内没有识别到任何命令词，就会切换到只监听唤词状态。
@@ -406,7 +416,7 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #endif
 
 #if USE_TTS
-#define UART_TTS_NUMBER         HAL_UART1_BASE          //TTS文本合成通信串口号
+#define UART_TTS_NUMBER         HAL_UART0_BASE          //TTS文本合成通信串口号
 #define UART_TTS_IRQ            UART1_IRQn              //TTS文本合成通信串口中断号
 #define UART_TTS_BAUDRATE       UART_BaudRate115200     //TTS文本合成通信串口波特率
 #endif
