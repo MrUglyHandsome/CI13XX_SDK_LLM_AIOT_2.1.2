@@ -195,6 +195,7 @@ typedef enum{
     CIAS_CMD_EXEC_STATE                    =  0x0801,     /*指令执行状态，返回数据部分3字节 前两字节表示语音芯片接收到指令的类型， 第3字节表示指令执行结果(0x01-执行成功 0x02-执行失败)*/
 
    //===注意用户使用地址请从0x4xxx开始，避免和系统指令冲突
+    CIAS_CMD_AEC_SET               = 0x4002,   //设置aec
 }wifi_communicate_cmd_t;
 
 typedef enum

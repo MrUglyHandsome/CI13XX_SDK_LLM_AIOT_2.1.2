@@ -11,7 +11,7 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #define USE_CI_D02GS01J_BOARD       1   //CI-D0XGS01J，端子模块，芯片型号必须设置为1302
 #define USE_CI_D02GS02S_BOARD       0   //CI-D0XGS02S，SMT模块，芯片型号必须设置为1302
 #define USE_CI_D12GS01J_BOARD       0   //CI-D0XGS01J，端子模块，芯片型号必须设置为1312JE
-#define USE_CI_D06GT01D_BOARD       1   //CI-D06GT01D，开发版，芯片型号必须设置为1306
+#define USE_CI_D06GT01D_BOARD       0   //CI-D06GT01D，开发版，芯片型号必须设置为1306
 #define USE_CI_E12GS02J_BOARD       0   //CI-E12GS02J，开发版，芯片型号必须设置为231x
 #define USE_CI_D06GT01J_BOARD       0   //CI_D06GT01J, 开发板，型号必须为设置1306-仅配置支持双mic 算法+AEC，其他配置不支持
 #define USE_CI_E0XGTD02S_BOARD      0   //CI-E06GT02S, 开发板2305/2306
@@ -158,7 +158,7 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 
 
 #if NET_AUDIO_PLAY_BY_PCM || NET_AUDIO_PLAY_BY_OPUS || NET_AUDIO_PLAY_BY_G722
-#define NET_PLAY_PCM_OR_G722_ENABLE_LOCAL_PLAY            1             //云端播放通过pcm、G722格式时,同时开启本地播报
+#define NET_PLAY_PCM_OR_G722_ENABLE_LOCAL_PLAY            0             //云端播放通过pcm、G722格式时,同时开启本地播报
 #define USE_HP_OUT_NET_AUDIO                              1             //使用hpout直接输出云端音频
 #define PLAY_PCM_FRAME_ENABLE                             1             //播放pcm数据
 #define PLAY_PCM_FRAME_BUF_LEN                         1024*6           //pcm播放缓冲大小
@@ -223,7 +223,7 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #define PCM_ALG_ROOLBACK_FRAME_LEN                        25             //前端回退25帧400ms-
 #define PCM_ALG_FRAME_LEN                                 512            //前端原始音频16K采样，每帧256个点共512字节
 //          
-#define CUR_INTERACTION_MULTI_ROUND_ENABLE                0              //1-多轮 0-单轮
+#define CUR_INTERACTION_MULTI_ROUND_ENABLE                1              //1-多轮 0-单轮
 #define UPLOAD_PLAY_FULL_DUPLEX_ENABLE                    1              //全双工处理,播放音频的同时支持vad检测音频上传
 #define VAD_START_STOP_PLAY_ENABLE                        0              //全双工模式下，vad起来，立刻停止播放 1-停止播放 0-不停止播放
 #define CLOUD_ANS_TIME_OUT_ENEABLE                        0              //云端响应超时功能使能
@@ -303,9 +303,9 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #define DEFAULT_MODEL_GROUP_ID          0
 #endif
 
-#define PLAY_WELCOME_EN                 1       //是否在启动时播放开机提示音。1:是 0:否。
+#define PLAY_WELCOME_EN                 0       //是否在启动时播放开机提示音。1:是 0:否。
 #define PLAY_ENTER_WAKEUP_EN            0       //是否在唤醒时播放提示音。1:是 0:否。
-#define PLAY_EXIT_WAKEUP_EN             1       //是否在切换到只监听唤词状态时播放提示音。1:是 0:否。
+#define PLAY_EXIT_WAKEUP_EN             0       //是否在切换到只监听唤词状态时播放提示音。1:是 0:否。
 #define PLAY_OTHER_CMD_EN               0       //是否在识别到命令词时播放提示音。1:是 0:否。
 #define ADAPTIVE_THRESHOLD              0
 #define ASR_SKIP_FRAME_CONFIG           0
@@ -315,7 +315,7 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #if  USE_HP_OUT_NET_AUDIO
 #define AUDIO_PLAYER_ENABLE             0   //是否启用音频播放器。0:不启用,1:启用。不使用播放功能时，启用本地mp3播放器多占用内存：默认播放器52K、精简播放器36K
 #else
-#define AUDIO_PLAYER_ENABLE             1   //是否启用音频播放器。0:不启用,1:启用。不使用播放功能时，启用本地mp3播放器多占用内存：默认播放器52K、精简播放器36K
+#define AUDIO_PLAYER_ENABLE             0   //是否启用音频播放器。0:不启用,1:启用。不使用播放功能时，启用本地mp3播放器多占用内存：默认播放器52K、精简播放器36K
 #endif
                                             //关闭此功能可以节省内存空间。
 #if  NET_PLAY_PCM_OR_G722_ENABLE_LOCAL_PLAY

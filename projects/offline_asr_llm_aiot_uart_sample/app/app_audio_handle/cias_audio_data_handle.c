@@ -865,6 +865,27 @@ int32_t aiot_wifi_msg_callback(const uint8_t *msg_buf)
 		dpmu_software_reset_system_config();
 		break;
 #endif
+case CIAS_CMD_AEC_SET:   //设置aec
+        if (pheader->len == 1)
+        {
+            uint16_t param = msg_buf[msg_offset];
+            if(param == 0)   //关闭aec
+            {
+                mprintf("aec set off!!!!!!!!!!\n");
+                ciss_set(CI_SS_PLAY_STATE, CI_SS_PLAY_STATE_IDLE); //设置播放状态为空闲
+            }
+            else if(param == 1)   //打开aec
+            {
+                mprintf("aec set on!!!!!!!!!!\n");
+                ciss_set(CI_SS_PLAY_STATE, CI_SS_PLAY_STATE_PLAYING); //设置为正在播放状
+            }
+        }
+        else
+        {
+            goto PARSE_WIFI_MSG_ERR;
+        }
+        
+        break;
 #if IIS_CHANNEL_ENG_CALC_EANBLE
     case CIAS_FACTORY_START: // 开始测试
         mprintf("CIAS_FACTORY_START==\r\n");
