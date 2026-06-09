@@ -64,10 +64,10 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #define USE_IIS1_OUT_PRE_RSLT_AUDIO    0   //1,开启IIS采音功能,可以使用采音板采音,占用PA2~PA6。会多消耗20KB SYS内存 0,关闭IIS采音功能,PA2~PA6可以用于其它功能。
             
 //**通讯串口配置
-#define CONFIG_CI_LOG_UART             HAL_UART0_BASE//HAL_UART0_BASE   //配置log输出使用的串口，请勿与protocol共用同一个串口
+#define CONFIG_CI_LOG_UART             HAL_UART2_BASE//HAL_UART0_BASE   //配置log输出使用的串口，请勿与protocol共用同一个串口
 
 #define MSG_COM_USE_UART_EN            1    //0,关闭语音模块通讯协议。1,开启语音模块通讯协议。
-#define UART_PROTOCOL_NUMBER           HAL_UART2_BASE      //语音模块协议使用的串口，请勿与log共用同一个串口。
+#define UART_PROTOCOL_NUMBER           HAL_UART0_BASE      //语音模块协议使用的串口，请勿与log共用同一个串口。
 #define UART_PROTOCOL_BAUDRATE         UART_BaudRate115200  //语音模块协议使用的串口波特率。
 #define UART_PROTOCOL_VER              255    //语音模块协议版本号:1,一代协议。2,二代协议，255,平台生成协议
 
