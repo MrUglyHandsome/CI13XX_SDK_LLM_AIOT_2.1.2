@@ -18,7 +18,7 @@ CI_ALG_TYPE := $(USE_AEC_DENOISE_NN)
 
 ########可组合算法使能(注意:设置变量值后面不能有空格，只能是0/1/2...)########
 #---AIOT 音频压缩类型  	#0-null  1-speex  2-opus 3-g722
-AIOT_AUDIO_COMPRESS_TYPE       := 1
+AIOT_AUDIO_COMPRESS_TYPE       := 0
 #---音频上传云端接口类型: #1-串口输出  2-hpout输出  3-iis输出 (不可修改)
 AUDIO_UPLOAD_TYPE              := 1
 #---播放器类型: 0-精简播放器(相比老播放器节约内存15KB,功能简单) 1-老播放器(占内存较多，功能完善)

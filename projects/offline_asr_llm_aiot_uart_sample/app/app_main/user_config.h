@@ -140,8 +140,8 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 
 // 若使用的组合内存不够，可关闭重采样，节省24KB内存，但是识别效果会下降5个点左右
 //压缩算法选择-pcm和speex和opus只能三选一,不能同时支持; opus压缩+mp3播放不支持自学习，推荐推荐设置SYS_HEAP_SIZE = (1024*110))
-#define AUDIO_COMPRESS_RECORD_DISABLE                     0            //(务必在makefile中配置宏AIOT_AUDIO_COMPRESS_TYPE=0)PCM上传数据，不做数据压缩 推荐设置SYS_HEAP_SIZE = (1024*130))
-#define AUDIO_COMPRESS_SPEEX_ENABLE                       1            //(务必在makefile中配置宏AIOT_AUDIO_COMPRESS_TYPE=1) 1-处理使能SPEEX压缩后的数据 2-使能opus压缩；推荐设置SYS_HEAP_SIZE = (1024*110)) 
+#define AUDIO_COMPRESS_RECORD_DISABLE                     1            //(务必在makefile中配置宏AIOT_AUDIO_COMPRESS_TYPE=0)PCM上传数据，不做数据压缩 推荐设置SYS_HEAP_SIZE = (1024*130))
+#define AUDIO_COMPRESS_SPEEX_ENABLE                       0            //(务必在makefile中配置宏AIOT_AUDIO_COMPRESS_TYPE=1) 1-处理使能SPEEX压缩后的数据 2-使能opus压缩；推荐设置SYS_HEAP_SIZE = (1024*110))
 #define AUDIO_COMPRESS_OPUS_ENABLE                        0            //(务必在makefile中配置宏AIOT_AUDIO_COMPRESS_TYPE=2) 1-处理使能SPEEX压缩后的数据 2-使能opus压缩 OPUS比speex多消耗31KB内存,目前仅USE_AEC_DENOISE_NN算法支持，其余内存不够
 #define AUDIO_COMPRESS_G722_ENABLE                        0            //(务必在makefile中配置宏AIOT_AUDIO_COMPRESS_TYPE=0)20ms压缩一次，320个点，640字节压缩为160字节，压缩率为4:1 推荐设置SYS_HEAP_SIZE = (1024*130)) 
 //网络数据播放类型选择-mp3和pcm和opus只能三选一，不能同时支持;
