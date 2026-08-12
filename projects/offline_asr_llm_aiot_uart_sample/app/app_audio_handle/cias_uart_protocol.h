@@ -11,6 +11,7 @@
 
 int8_t network_uart_port_init(void);
 int32_t network_send(int8_t *str,uint32_t length);
+int32_t network_send_try(int8_t *str,uint32_t length);
 void network_recv_play_data_task(void);
 
 #endif //_CIAS_UART_PROTOCOL_H_

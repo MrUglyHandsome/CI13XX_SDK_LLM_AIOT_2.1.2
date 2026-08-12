@@ -196,6 +196,7 @@ typedef enum{
 
    //===注意用户使用地址请从0x4xxx开始，避免和系统指令冲突
     CIAS_CMD_AEC_SET               = 0x4002,   //设置aec
+    CIAS_CMD_HEARTBEAT             = 0x4003,   //UART空闲心跳
 }wifi_communicate_cmd_t;
 
 typedef enum

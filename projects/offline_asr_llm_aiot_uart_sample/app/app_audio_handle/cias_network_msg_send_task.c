@@ -109,6 +109,19 @@ int cais_send_msg_flag_to_network(int8_t *send_buffer)
     network_send(send_buffer,strlen(send_buffer));
 }
 
+static int32_t network_send_heartbeat(void)
+{
+#if NETWORK_UART_HEARTBEAT_ENABLE && AUDIO_SEND_WITH_PROTOCOL_HEADER
+    uint8_t heartbeat_buf[16] = {0};
+    int32_t package_length = broadlink_frame_create(CIAS_CMD_HEARTBEAT, NULL, 0, heartbeat_buf, sizeof(heartbeat_buf), DEF_FILL, 0);
+    if(package_length > 0)
+    {
+        return network_send_try((int8_t *)heartbeat_buf, package_length);
+    }
+#endif
+    return 0;
+}
+
 int32_t cias_send_cmd(uint32_t cmd, uint32_t fill_data)
 {
 #if !AUDIO_SEND_WITH_PROTOCOL_HEADER
@@ -250,18 +263,16 @@ void network_send_data_task(void *p_arg)
     sdio_task_msg_t rev_msg;
     BaseType_t ret = pdPASS;
     network_msg_data_t *data;
-    int16_t i = 0;
     while(1)
     {
-        ret = xQueueReceive(network_msg_queue, &rev_msg, portMAX_DELAY);   
+        ret = xQueueReceive(network_msg_queue, &rev_msg, pdMS_TO_TICKS(NETWORK_UART_HEARTBEAT_INTERVAL_MS));
         if(pdPASS == ret)
         {
-           // ci_loginfo(LOG_USER,"rev_msg.msg_type = %d\r\n", rev_msg.msg_type); 
-            int8_t *p =  (int8_t *)data->payload;   
+           // ci_loginfo(LOG_USER,"rev_msg.msg_type = %d\r\n", rev_msg.msg_type);
             switch (rev_msg.msg_type)
             {
                 case SDIO_DMA_SEND:
-                {                    
+                {
                     data = &rev_msg.network_data;
                     //mprintf("data->length = %d, data->type = %d\r\n", data->length, data->type);
                     if(data->type == CMD_AND_DATA)
@@ -281,20 +292,26 @@ void network_send_data_task(void *p_arg)
                     //         mprintf("%02x", (uint8_t)p[i]);
                     //    }
                        #if AUDIO_SEND_WITH_PROTOCOL_HEADER
-                       ret = network_send((int8_t *)data->payload, data->length);  
+                       ret = network_send((int8_t *)data->payload, data->length);
                        #else
-                       ret = network_send((int8_t *)data->payload + 16, data->length - 16);   
-                       #endif   
+                       ret = network_send((int8_t *)data->payload + 16, data->length - 16);
+                       #endif
                     }
                     break;
-                } 
+                }
                 default:
                 {
-                 
+
                     break;
                 }
             }
         }
+#if NETWORK_UART_HEARTBEAT_ENABLE
+        else if(uxQueueMessagesWaiting(network_msg_queue) == 0)
+        {
+            network_send_heartbeat();
+        }
+#endif
         vTaskDelay(pdMS_TO_TICKS(5));    //发送加延时，防止接收端串口buffer溢出
     }
 }

@@ -136,6 +136,9 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #define AUDIO_DATA_PLAY_BY_UART                         (1)            //通过串口接收音频数据播放配置
 #endif
 
+#define NETWORK_UART_HEARTBEAT_ENABLE                  1              //UART空闲心跳使能
+#define NETWORK_UART_HEARTBEAT_INTERVAL_MS             1000           //UART空闲心跳周期，单位ms
+
 #define  AUDIO_VAD_CHECK_ENABLE                           1            //vad 检测功能使能-不可修改
 
 // 若使用的组合内存不够，可关闭重采样，节省24KB内存，但是识别效果会下降5个点左右

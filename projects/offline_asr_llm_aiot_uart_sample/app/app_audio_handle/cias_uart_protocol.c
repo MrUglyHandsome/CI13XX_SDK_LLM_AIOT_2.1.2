@@ -91,10 +91,10 @@ int8_t network_send_Byte(int8_t ch)
     return 1;
 }
 
-int32_t network_send(int8_t *str, uint32_t length)
+static int32_t network_send_with_timeout(int8_t *str, uint32_t length, TickType_t wait_ticks)
 {
     int32_t ret = 0;
-    SemaphoreHandle_t xReturn = xSemaphoreTake(network_send_sem, pdMS_TO_TICKS(1000)); 
+    BaseType_t xReturn = xSemaphoreTake(network_send_sem, wait_ticks);
 	if(!xReturn)
 	{
 	   return 0;
@@ -112,6 +112,16 @@ int32_t network_send(int8_t *str, uint32_t length)
     }
     xReturn = xSemaphoreGive( network_send_sem );//给出互斥量
     return ret;
+}
+
+int32_t network_send(int8_t *str, uint32_t length)
+{
+    return network_send_with_timeout(str, length, pdMS_TO_TICKS(1000));
+}
+
+int32_t network_send_try(int8_t *str, uint32_t length)
+{
+    return network_send_with_timeout(str, length, 0);
 }
 
 /** 网络通讯初始化
