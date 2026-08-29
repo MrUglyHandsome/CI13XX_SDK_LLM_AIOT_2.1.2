@@ -1106,7 +1106,17 @@ void sys_deal_asr_msg(sys_msg_asr_data_t *asr_msg)
             /*updata wakeup state*/
             ciss_set(CI_SS_CMD_STATE,CI_SS_CMD_IS_WAKEUP);
             ciss_set(CI_SS_CMD_STATE_FOR_SSP,CI_SS_CMD_IS_WAKEUP);
-            enter_wakeup_deal(gCiasAiotFuncParam.wake_up_continue_timeout*1000,cmd_handle);    /*updata wakeup state*/
+            //enter_wakeup_deal(gCiasAiotFuncParam.wake_up_continue_timeout*1000,cmd_handle);
+            /* 唤醒词序号(即cmd_info表commandID)，先给出序号再决定唤醒保持时长 */
+            uint16_t wakeup_cmd_id = cmd_info_get_command_id(cmd_handle);
+            uint32_t wakeup_keep_ms = gCiasAiotFuncParam.wake_up_continue_timeout*1000;
+            mprintf("wakeup word cmd_id=%d\n", wakeup_cmd_id);   /*给出一个序号*/
+            /* "小沐退下"(12)/"灵犀退下"(13)：唤醒后修改退出定时器周期为100ms，短暂唤醒后退出 */
+            if ((12 == wakeup_cmd_id) || (13 == wakeup_cmd_id))
+            {
+            wakeup_keep_ms = 100;
+            }
+            enter_wakeup_deal(wakeup_keep_ms, cmd_handle);    /*updata wakeup state*/    /*updata wakeup state*/
 
         }
         else if (SYS_STATE_WAKEUP == get_wakeup_state())
