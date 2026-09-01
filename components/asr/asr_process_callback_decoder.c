@@ -77,6 +77,7 @@ void get_cwsl_threshold(unsigned char *wakeup_threshold,unsigned char *cmdword_t
 #define ENERGY_BUFFER_CNT (120) //  计算120帧，每帧16ms；意味着统计前面120*16=1920 帧，
 #define ENERAY_EFFECTIVE_CNT (40)  //  统计120帧中最大的40帧进行求平均
 float g_denergy_buffer[ENERGY_BUFFER_CNT];
+uint16_t g_mic_db = 0;  // 最近一次统计的麦克风能量dB值，供心跳包携带到WiFi端
 uint16_t sortDescending(float arr[], int deffectivecnt);
 
 // 每100ms统计能量并打印结果的线程
@@ -85,8 +86,8 @@ void energy_sort_print_task(void *p)
     while (1)
     {
         vTaskDelay(pdMS_TO_TICKS(100));
-        uint16_t energy = sortDescending(g_denergy_buffer, ENERAY_EFFECTIVE_CNT);
-        mprintf("energy sortDescending result: %d\n", energy);
+        g_mic_db = sortDescending(g_denergy_buffer, ENERAY_EFFECTIVE_CNT);
+      //  mprintf("energy sortDescending result: %d\n", g_mic_db);
     }
 }
 

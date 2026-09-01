@@ -109,11 +109,20 @@ int cais_send_msg_flag_to_network(int8_t *send_buffer)
     network_send(send_buffer,strlen(send_buffer));
 }
 
+/**
+ * @brief 获取携带麦克风能量的fill_data：能量值放最高字节，低24位保持DEF_FILL原有填充值
+ */
+static uint32_t energy_fill_data(void)
+{
+    extern uint16_t g_mic_db;  // 最近一次麦克风能量dB值（asr_process_callback_decoder.c）
+    return (((uint32_t)g_mic_db & 0xFF) << 24) | (DEF_FILL & 0x00FFFFFF);
+}
+
 static int32_t network_send_heartbeat(void)
 {
 #if NETWORK_UART_HEARTBEAT_ENABLE && AUDIO_SEND_WITH_PROTOCOL_HEADER
     uint8_t heartbeat_buf[16] = {0};
-    int32_t package_length = broadlink_frame_create(CIAS_CMD_HEARTBEAT, NULL, 0, heartbeat_buf, sizeof(heartbeat_buf), DEF_FILL, 0);
+    int32_t package_length = broadlink_frame_create(CIAS_CMD_HEARTBEAT, NULL, 0, heartbeat_buf, sizeof(heartbeat_buf), energy_fill_data(), 0);
     if(package_length > 0)
     {
         return network_send_try((int8_t *)heartbeat_buf, package_length);
@@ -196,8 +205,8 @@ int voice_data_packet_and_send(uint32_t packet_type,uint8_t *voice_data, int32_t
 {
     static int32_t buff_count = 0;
     sdio_task_msg_t send_msg;
-    
-    broadlink_frame_create(packet_type, voice_data, packet_len, (broad_link_buf + buff_count * NETWORK_SEND_BUFF_MAX_SIZE), NETWORK_SEND_BUFF_MAX_SIZE, 0x12345678,0);
+
+    broadlink_frame_create(packet_type, voice_data, packet_len, (broad_link_buf + buff_count * NETWORK_SEND_BUFF_MAX_SIZE), NETWORK_SEND_BUFF_MAX_SIZE, energy_fill_data(),0);
     send_msg.network_data.payload = (uint32_t)(broad_link_buf + buff_count * NETWORK_SEND_BUFF_MAX_SIZE);
     send_msg.msg_type = SDIO_DMA_SEND;
     send_msg.network_data.type = AUDIO_MIDDLE;

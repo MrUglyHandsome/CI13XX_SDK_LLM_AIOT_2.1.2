@@ -137,7 +137,7 @@ chipintelli提供的部分开发板和模组，可以通过下面的宏选择，
 #endif
 
 #define NETWORK_UART_HEARTBEAT_ENABLE                  1              //UART空闲心跳使能
-#define NETWORK_UART_HEARTBEAT_INTERVAL_MS             1000           //UART空闲心跳周期，单位ms
+#define NETWORK_UART_HEARTBEAT_INTERVAL_MS             100            //UART空闲心跳周期，单位ms
 
 #define  AUDIO_VAD_CHECK_ENABLE                           1            //vad 检测功能使能-不可修改
 
