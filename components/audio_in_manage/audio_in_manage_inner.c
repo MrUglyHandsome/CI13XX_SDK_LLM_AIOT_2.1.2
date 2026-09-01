@@ -349,6 +349,10 @@ int16_t data_ref_buffer[DATA_VOICE_BUFFER_NUM][AUDIO_CAP_DIV_NUM][AUDIO_CAP_POIN
 // 软回采不能使用在单麦的方案上
 int16_t data_mic_buffer[DATA_VOICE_BUFFER_NUM][AUDIO_CAP_DIV_NUM][MIC_DATA_NUM];
 #endif
+
+
+
+extern void ven_call_function(float dvn);
 void audio_in_manage_inner_task(void *p)
 {
     ci_ssp_alg_switch_init();
@@ -357,7 +361,7 @@ void audio_in_manage_inner_task(void *p)
 
     // extern void set_nn_to_dtw_init_info(bool cinn_is_using_to_dtw,uint16_t max_num_to_dtw);
     // set_nn_to_dtw_init_info(true,20);
-
+    is_open_voice_energy(true, ven_call_function);
 #if !NO_ASR_FLOW
     while (CI_SS_ASR_SYS_POWER_OFF == ciss_get(CI_SS_ASR_SYS_STATE))
     {

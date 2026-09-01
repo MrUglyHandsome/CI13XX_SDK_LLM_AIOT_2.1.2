@@ -45,6 +45,7 @@ typedef struct
     short asr_score;
     uint16_t asr_frames;
 	nlp_data_t nlp_data;
+    uint16_t asr_energy;
 }sys_msg_asr_data_t;
 
 /************************************
