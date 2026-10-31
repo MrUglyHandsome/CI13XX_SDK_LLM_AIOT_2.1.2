@@ -74,8 +74,14 @@ int send_asr_pre_confirm_msg(uint32_t cmd_handle)
 void get_cwsl_threshold(unsigned char *wakeup_threshold,unsigned char *cmdword_threshold )
 {}
 #endif */ 
-#define ENERGY_BUFFER_CNT (120) //  计算120帧，每帧16ms；意味着统计前面120*16=1920 帧，
-#define ENERAY_EFFECTIVE_CNT (40)  //  统计120帧中最大的40帧进行求平均
+/*
+ * 能量统计窗口 = ENERGY_BUFFER_CNT 帧 × 16ms/帧。
+ * 原为 120帧/40帧（1.92s 峰值保持），上报值被抹平，音乐播放时只在 73~76 间浮动。
+ * 现改为 12帧/4帧（192ms），让能量值快速跟随瞬时电平；窗口仍大于 100ms 上报周期，
+ * 保证每次上报都覆盖到新数据。取最大的 1/3 帧求平均的比例保持不变（抑制窗口内静音段）。
+ */
+#define ENERGY_BUFFER_CNT (12) // 计算12帧，每帧16ms；意味着统计前面12*16=192ms 的数据
+#define ENERAY_EFFECTIVE_CNT (4)  // 统计12帧中最大的4帧进行求平均
 float g_denergy_buffer[ENERGY_BUFFER_CNT];
 uint16_t g_mic_db = 0;  // 最近一次统计的麦克风能量dB值，供心跳包携带到WiFi端
 uint16_t sortDescending(float arr[], int deffectivecnt);
@@ -100,12 +106,14 @@ void ven_call_function(float dvn)
         sg_id = 0;
     }
 
-    // 收到第一帧能量时创建统计打印线程
+    // 收到第一帧能量时创建统计打印线程；创建失败则下次再试，避免标志位先置而线程没起来
     static uint8_t s_energy_task_created = 0;
     if (!s_energy_task_created)
     {
-        s_energy_task_created = 1;
-        xTaskCreate(energy_sort_print_task, "energy_sort_print_task", 512, NULL, 4, NULL);
+        if (pdPASS == xTaskCreate(energy_sort_print_task, "energy_sort_print_task", 512, NULL, 4, NULL))
+        {
+            s_energy_task_created = 1;
+        }
     }
 }
 
@@ -144,8 +152,21 @@ uint16_t sortDescending(float arr[], int deffectivecnt)
          sum += s_sort_work_buffer[i];
     }
 
+    /* 开机时缓冲区全 0，log10(0) = -inf，浮点转无符号是未定义行为，这里直接返回 0 */
+    if (sum <= 0.0f)
+    {
+        xSemaphoreGive(s_sort_mutex);
+        return 0;
+    }
+
     mic_db = 10.0f*MASK_ROM_LIB_FUNC->newlibcfunc.log10f_p(sum/deffectivecnt);
     mic_db = (mic_db-18.783)/0.7933;// 根据测试结果到校准波形
+    /* 低于刻度下限时会是负数，浮点转无符号是未定义行为，这里夹到 0 */
+    if (mic_db < 0.0f)
+    {
+        xSemaphoreGive(s_sort_mutex);
+        return 0;
+    }
     mic_db = round(mic_db); // 四舍五入取整
 
     xSemaphoreGive(s_sort_mutex);

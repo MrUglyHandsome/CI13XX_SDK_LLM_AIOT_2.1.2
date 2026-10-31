@@ -480,6 +480,23 @@ void inner_codec_set_pga_gain(inner_codec_cha_sel_t cha,int32_t ALC_Gain)
 }
 
 
+/**
+ * @brief 读取MIC通道当前的PGA增益(dB)
+ *        为 get_pga_gain_reg_data_from_db() 的逆运算：reg = (gain_db + 18) / 1.5，
+ *        故 gain_db = reg * 1.5 - 18，范围 -18dB ~ 28.5dB。
+ *        使能ALC时该值由ALC实时调节，可用于把ALC的增益补偿回测量结果。
+ *
+ * @param cha 通道选择
+ * @return 当前PGA增益，单位dB
+ */
+float inner_codec_get_mic_pga_gain_db(inner_codec_cha_sel_t cha)
+{
+    uint32_t reg_data = CODEC->pga_gain_reg[cha] & 0x1f;
+
+    return (float)reg_data * 1.5f - 18.0f;
+}
+
+
 //ALC默认配置
 #define METHOD_TO_CONTROL_GAIN_ATTACK   0
 #define ALC_JACK_WAY    INNER_CODEC_ALC_MODE_JACKWAY2

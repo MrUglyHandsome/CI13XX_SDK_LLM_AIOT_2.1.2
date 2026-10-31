@@ -601,6 +601,7 @@ void inner_codec_adc_disable(inner_codec_cha_sel_t cha, inner_cedoc_gate_t EN);
 void inner_codec_dac_enable(bool is_first_enable);
 void inner_codec_dac_disable(void);
 void inner_codec_alc_disable(inner_codec_cha_sel_t cha);
+float inner_codec_get_mic_pga_gain_db(inner_codec_cha_sel_t cha);
 void inner_codec_adc_mode_set(inner_codec_mode_t mode,inner_codec_frame_1_2len_t frame_Len,
                         inner_codec_valid_word_len_t word_len,inner_codec_i2s_data_famat_t data_fram);
 void inner_codec_dac_mode_set(inner_codec_mode_t mode,inner_codec_frame_1_2len_t frame_Len,

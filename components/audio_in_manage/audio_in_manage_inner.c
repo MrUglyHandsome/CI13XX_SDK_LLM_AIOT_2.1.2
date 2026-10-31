@@ -25,6 +25,7 @@
 #include "alg_preprocess.h"
 #include "ci130x_nuclear_com.h"
 #include "ci130x_iwdg.h"
+#include "ci130x_codec.h"
 #include "ci_flash_data_info.h"
 #include "user_config.h"
 #include "cias_network_msg_protocol.h"
@@ -154,6 +155,119 @@ void deal_one_frm_fft_rslt_callback(void *para)
 
 static bool voice_energy_gate = false;
 static get_voice_energy_fun_t get_voice_energy_callback_fun = NULL;
+
+/*
+ * 录音缓存布局为 [ch0, ch1] 交织（见 driver/boards/CI-D02GS01J.c）：
+ *   通道0 = MIC，差分输入
+ *   通道1 = 回采，单端输入，喇叭播放信号经回踩电路进入该通道（USE_AEC_MODULE 时兼作 AEC 参考）
+ * 原实现把整个缓存的样本不分通道地平方求和，等于把两路混在一起统计。
+ */
+#define ENERGY_CHA_MIC      0
+#define ENERGY_CHA_REF      1
+
+/*
+ * 能量上报的通道：
+ *   ENERGY_CHA_MIC —— 采人说话/环境声
+ *   ENERGY_CHA_REF —— 采喇叭放出来的声音（回踩信号），做声音能量律动用这个
+ */
+#ifndef ENERGY_REPORT_CHA
+#define ENERGY_REPORT_CHA   ENERGY_CHA_REF
+#endif
+
+/*
+ * 回采通道的内置 ALC 会实时改 PGA 增益（实测播放音乐时该通道从 +27dB 被压到 0dB），
+ * 不补偿的话动态范围会被压掉一大半，做律动效果会没有起伏。
+ * 打开后按当前 PGA 增益把实测值还原成真实电平。
+ */
+#ifndef ENERGY_ALC_COMPENSATE
+#define ENERGY_ALC_COMPENSATE   1
+#endif
+
+/**
+ * @brief 取指定通道的均方值（该通道样本平方的平均）
+ *
+ * @param data        录音缓存首地址，多通道按 [ch0, ch1, ch0, ch1, ...] 交织
+ * @param data_size   本块字节数
+ * @param cha_idx     取哪一路，见 ENERGY_CHA_MIC / ENERGY_CHA_REF
+ * @param cha_num_out 回传本块实际有几路通道，可为 NULL
+ * @return 该通道的均方值
+ */
+static float energy_channel_mean_square(int16_t *data, uint32_t data_size, int cha_idx, int *cha_num_out)
+{
+    /* 与板级 block_size 的算法保持一致，据此推算本块数据实际有几路通道 */
+    uint32_t ch_bytes = AUDIO_CAP_POINT_NUM_PER_FRM * sizeof(int16_t)
+#if INNER_CODEC_AUDIO_IN_USE_RESAMPLE
+                        * 2
+#endif
+                        ;
+    int cha = (ch_bytes > 0) ? (int)(data_size / ch_bytes) : 1;
+    uint32_t frames;
+    float sum = 0.0f;
+
+    if (cha < 1)
+    {
+        cha = 1;
+    }
+    if (cha > 2)
+    {
+        cha = 2;
+    }
+    if (cha_num_out)
+    {
+        *cha_num_out = cha;
+    }
+    if (cha_idx < 0 || cha_idx >= cha)
+    {
+        return 0.0f;   /* 本块没有这一路 */
+    }
+
+    frames = data_size / (sizeof(int16_t) * cha);
+    for (uint32_t i = 0; i < frames; i++)
+    {
+        float s = (float)data[i * cha + cha_idx];
+        sum += s * s;
+    }
+    return (frames > 0) ? (sum / (float)frames) : 0.0f;
+}
+
+#if ENERGY_ALC_COMPENSATE
+/**
+ * @brief 把某通道实测均方值还原成"ALC 未介入时"的均方值
+ *        10^(gain_db/10) 是该通道 PGA 的功率倍数，除掉它就抵消了 ALC 的调节
+ */
+static float energy_alc_uncompensate(float measured_ms, int cha_idx)
+{
+    inner_codec_cha_sel_t cha = (cha_idx == ENERGY_CHA_REF) ? INNER_CODEC_RIGHT_CHA : INNER_CODEC_LEFT_CHA;
+    float gain_db = inner_codec_get_mic_pga_gain_db(cha);
+
+    /* 10^(-gain_db/10) = exp(-gain_db * ln10 / 10) */
+    return measured_ms * MASK_ROM_LIB_FUNC->newlibcfunc.expf_p(-gain_db * 0.23025851f);
+}
+#endif
+
+/*
+ * 能量诊断打印开关。
+ * 排查期置1：每约1秒打印一行 [micdiag]，含两路实测值、上报值(ALC补偿前后)
+ * 和两路 ALC 当前增益，用于确认 ALC 是否在压动态范围。
+ * 定位完成后置0关闭（会同时省掉每帧多跑的一遍均方计算）。
+ * 需要重新排查时改回 1 即可，相关代码全部保留。
+ */
+#ifndef MIC_ENERGY_ALC_DIAG
+#define MIC_ENERGY_ALC_DIAG     0
+#endif
+
+#if MIC_ENERGY_ALC_DIAG
+/* 把均方值换算成上报刻度×10，便于与WiFi端看到的数值直接对照 */
+static int32_t mic_ms_to_display_x10(float ms)
+{
+    if (ms <= 0.0f)
+    {
+        return 0;
+    }
+    float db = 10.0f * MASK_ROM_LIB_FUNC->newlibcfunc.log10f_p(ms);
+    return (int32_t)(((db - 18.783f) / 0.7933f) * 10.0f);
+}
+#endif
 void is_open_voice_energy(bool gate, get_voice_energy_fun_t *fun)
 {
     voice_energy_gate = gate;
@@ -534,14 +648,47 @@ void audio_in_manage_inner_task(void *p)
             if (voice_energy_gate)
             {
                 int16_t *voice_data = (int16_t *)data_addr;
-                float voice_energy = 0.0f;
-                for (int i = 0; i < data_size / 2; i++)
+                int cha_num = 1;
+                /* 只统计选定的那一路（见 ENERGY_REPORT_CHA），不把两路混在一起 */
+                float src_ms = energy_channel_mean_square(voice_data, data_size, ENERGY_REPORT_CHA, &cha_num);
+
+#if ENERGY_ALC_COMPENSATE
+                /* 回采通道受 ALC 调节，还原成真实电平，否则律动会被压平 */
+                float report_ms = energy_alc_uncompensate(src_ms, ENERGY_REPORT_CHA);
+#else
+                float report_ms = src_ms;
+#endif
+
+#if MIC_ENERGY_ALC_DIAG
+                /* 诊断：每约1秒打印一次。
+                 * src_x10   : 上报通道的实测值（未做ALC补偿），对应改动前的读数
+                 * rpt_x10   : 实际上报值（做了ALC补偿）
+                 * mic_x10   : MIC通道的值，供对照
+                 * pgaX_x10  : 两路的ALC当前增益(0.1dB)，看它动不动就知道ALC在不在工作 */
                 {
-                    voice_energy += (float)(voice_data[i] * voice_data[i]);
+                    static uint16_t diag_cnt = 0;
+                    if (++diag_cnt >= 60)
+                    {
+                        diag_cnt = 0;
+                        float mic_ms = energy_channel_mean_square(voice_data, data_size, ENERGY_CHA_MIC, NULL);
+                        float ref_ms = energy_channel_mean_square(voice_data, data_size, ENERGY_CHA_REF, NULL);
+
+                        mprintf("[micdiag] ch=%d src=%d src_x10=%d rpt_x10=%d mic_x10=%d ref_x10=%d pgaL_x10=%d pgaR_x10=%d\n",
+                                cha_num,
+                                ENERGY_REPORT_CHA,
+                                mic_ms_to_display_x10(src_ms),
+                                mic_ms_to_display_x10(report_ms),
+                                mic_ms_to_display_x10(mic_ms),
+                                mic_ms_to_display_x10(ref_ms),
+                                (int32_t)(inner_codec_get_mic_pga_gain_db(INNER_CODEC_LEFT_CHA) * 10.0f),
+                                (int32_t)(inner_codec_get_mic_pga_gain_db(INNER_CODEC_RIGHT_CHA) * 10.0f));
+                    }
                 }
+#endif
+
                 if (get_voice_energy_callback_fun)
                 {
-                    get_voice_energy_callback_fun(voice_energy / ((float)(data_size / 2)));
+                    get_voice_energy_callback_fun(report_ms);
                 }
             }
 
